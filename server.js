@@ -1,10 +1,9 @@
 const express = require('express');
 const cors = require('cors'); // Import the CORS package
 const app = express();
-const port = 9000; // Ensure you're using the correct port
+const port = 9001; // Ensure you're using the correct port
 
 app.use(cors()); // Enable CORS for all routes (you can customize this if needed)
-
 app.use(express.json());
 
 // Array to store copied data
@@ -50,7 +49,7 @@ app.get('/api/all-copies', (req, res) => {
   });
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${port}`);
+  console.log(`Accessible on this machine at http://localhost:${port}`);
 });

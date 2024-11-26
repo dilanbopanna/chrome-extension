@@ -52,7 +52,7 @@ function App() {
   // Fetch data function
   const fetchData = () => {
     setLoading(true);
-    fetch('http://localhost:9000/api/all-copies')
+    fetch('http://192.168.1.6:9001/api/all-copies')
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');

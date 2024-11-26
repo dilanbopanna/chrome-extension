@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Selected text from:', sender.url);
     console.log('Text:', message.text);
 
-    fetch('http://localhost:9000/api/save-copy', {
+    fetch('http://localhost:9001/api/save-copy', {
       // Change to your local server URL
       method: 'POST',
       headers: {
