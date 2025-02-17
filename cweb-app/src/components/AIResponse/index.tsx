@@ -44,8 +44,12 @@ const AIResponse: React.FC<AIResponseProps> = ({
         );
         if (runStatus.status === 'completed') {
           const messages = await openai.beta.threads.messages.list(thread.id);
+          const contentItem = messages.data[0]?.content[0];
+
           const aiResponse =
-            messages.data[0]?.content[0]?.text?.value || 'No response';
+            contentItem && 'text' in contentItem
+              ? contentItem.text.value
+              : 'No response';
           setResponse(aiResponse);
           localStorage.setItem(uniqueKey, aiResponse);
           completed = true;
