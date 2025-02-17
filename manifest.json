@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "C Monitor Extension",
+  "name": "InterviewSync",
   "version": "1.0",
-  "description": "Capture content",
-  "permissions": ["scripting", "activeTab", "clipboardRead"],
+  "description": "InterviewSync lets you select text or code from any website and sync it across devices to get AI-powered coding solutions and explanations.",
+  "permissions": ["scripting", "activeTab", "clipboardRead", "storage"],
   "background": {
     "service_worker": "background.js"
   },
@@ -13,5 +13,8 @@
       "js": ["content.js"]
     }
   ],
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html"
+  }
 }

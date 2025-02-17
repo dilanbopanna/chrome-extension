@@ -1,51 +1,91 @@
 const express = require('express');
-const cors = require('cors'); // Import the CORS package
+const cors = require('cors');
 const app = express();
-const port = 9001; // Ensure you're using the correct port
+const port = 9001;
 
-app.use(cors()); // Enable CORS for all routes (you can customize this if needed)
+app.use(cors());
 app.use(express.json());
 
-// Array to store copied data
-const copiedData = [];
+// Object to store copied data per user
+const userCopiedData = {};
 
 // POST API to save copied content
 app.post('/api/save-copy', (req, res) => {
-  const copiedContent = req.body.copiedContent;
+  const { username, copiedContent } = req.body;
 
-  if (!copiedContent) {
-    return res
-      .status(400)
-      .json({ status: 'error', message: 'No content provided' });
+  if (!username || !copiedContent) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Username and content are required',
+    });
+  }
+
+  if (!userCopiedData[username]) {
+    userCopiedData[username] = [];
   }
 
   const timestamp = new Date().toISOString();
   const newEntry = {
-    id: copiedData.length + 1, // Auto-incremental ID
+    id: userCopiedData[username].length + 1, // Auto-incremental ID
     data: copiedContent,
-    timestamp: timestamp,
+    timestamp,
   };
 
-  copiedData.push(newEntry);
+  // Ensure no more than 100 items for a user
+  if (userCopiedData[username].length >= 100) {
+    // Remove the oldest content (first item)
+    userCopiedData[username].shift();
+  }
 
-  console.log('Received content:', newEntry);
-  res.json({ status: 'success', message: 'Content saved', entry: newEntry });
+  // Add the new content
+  userCopiedData[username].push(newEntry);
+
+  console.log(userCopiedData);
+  console.log(`Content saved for user: ${username}`, newEntry);
+  res.json({
+    status: 'success',
+    message: 'Content saved',
+    entry: newEntry,
+  });
 });
 
-// GET API to fetch all data
+// GET API to fetch all copies for a user
 app.get('/api/all-copies', (req, res) => {
-  if (copiedData.length === 0) {
-    return res.json({
-      status: 'success',
-      message: 'No data available',
-      data: [],
+  const { username } = req.query;
+
+  if (!username) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Username is required',
     });
   }
 
+  const userData = userCopiedData[username] || [];
+
   res.json({
     status: 'success',
-    message: 'All data retrieved',
-    data: copiedData,
+    message: userData.length > 0 ? 'Data retrieved' : 'No data available',
+    data: userData,
+  });
+});
+
+// GET API to check if a username exists
+app.get('/api/check-username', (req, res) => {
+  const { username } = req.query;
+
+  if (!username) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Username is required',
+    });
+  }
+
+  const exists = !!userCopiedData[username];
+
+  res.json({
+    status: 'success',
+    message: exists ? 'Username exists' : 'Username not found',
+    exists,
   });
 });
 

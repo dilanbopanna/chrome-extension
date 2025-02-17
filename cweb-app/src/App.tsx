@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import './App.css';
+import MonitorCard from './components/MonitorCard';
+import UsernameInput from './components/UsernameInput';
+import UsernameDisplay from './components/UsernameDisplay';
+import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
+import { Alert, AlertDescription } from './components/ui/alert';
+import { Switch } from './components/ui/switch';
+import { Label } from './components/ui/label';
 
 interface CopiedContent {
   id: number;
@@ -7,99 +14,86 @@ interface CopiedContent {
   timestamp: string;
 }
 
-function formatTimestamp(timestamp: string): string {
-  const date = new Date(timestamp);
-
-  // Format the date as "YYYY-MM-DD HH:MM:SS"
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-const Card = ({ data, timestamp }: { data: string; timestamp: string }) => {
-  const copyToClipboard = () => {
-    navigator.clipboard
-      .writeText(data)
-      .then(() => {
-        alert('Content copied to clipboard!');
-      })
-      .catch((err) => {
-        alert('Failed to copy content: ' + err);
-      });
-  };
-
-  return (
-    <div className="card">
-      <div className="right-ctn">
-        <div className="timestamp">{formatTimestamp(timestamp)}</div>
-        <button onClick={copyToClipboard}>Copy</button>
-      </div>
-      <pre>{data}</pre>
-    </div>
-  );
-};
-
 function App() {
-  const [data, setData] = useState<CopiedContent[]>([]); // State to store the fetched data
-  const [loading, setLoading] = useState<boolean>(true); // State to handle loading state
-  const [error, setError] = useState<string | null>(null); // State to handle errors
+  const [data, setData] = useState<CopiedContent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [responseEnabled, setResponseEnabled] = useState<boolean>(false);
+  const [username, setUsername] = useState<string>(
+    localStorage.getItem('username') || ''
+  );
+  const [isEditing, setIsEditing] = useState<boolean>(!username);
 
-  // Fetch data function
-  const fetchData = () => {
-    setLoading(true);
-    fetch('http://192.168.1.6:9001/api/all-copies')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setData(data.data); // Assuming the response contains a `data` field with the copied content
-        setLoading(false); // Set loading to false when data is fetched
-      })
-      .catch((error) => {
-        setError(error.message); // Set error message if something goes wrong
-        setLoading(false); // Set loading to false even if there's an error
-      });
-  };
+  const fetchData = useCallback(() => {
+    if (!username) return;
+
+    fetch(`http://localhost:9001/api/all-copies?username=${username}`)
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject('Network error')
+      )
+      .then((data) => setData(data.data))
+      .catch((error) => setError(error));
+  }, [username, setData, setError]);
 
   useEffect(() => {
-    // Fetch data initially
-    fetchData();
-
-    // Poll the API every 2 seconds
-    const intervalId = setInterval(fetchData, 2000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(intervalId);
-  }, []); // Empty dependency array ensures the effect runs only once when the component mounts
-
-  if (loading) {
-    return <div>Loading...</div>; // Show loading message while waiting for the API response
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>; // Show error message if the API call fails
-  }
+    if (username) {
+      const intervalId = setInterval(fetchData, 2000);
+      return () => clearInterval(intervalId);
+    }
+  }, [username, fetchData]);
 
   return (
-    <div className="App">
-      <h1>Content</h1>
-      <ul>
-        {data.length > 0 ? (
-          data.map((item) => (
-            <Card key={item.id} data={item.data} timestamp={item.timestamp} />
-          ))
-        ) : (
-          <p>No data available.</p>
-        )}
-      </ul>
+    <div className="flex flex-col items-center min-h-screen bg-secondary text-primary p-0 md:p-8">
+      <Card className="w-full max-w-screen bg-white h-screen md:h-auto shadow-none md:shadow-md border-0 md:border">
+        <CardHeader>
+          <CardTitle className="text-2xl font-black">InterviewSync</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isEditing ? (
+            <UsernameInput
+              username={username}
+              setUsername={setUsername}
+              setIsEditing={setIsEditing}
+              fetchData={fetchData}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <UsernameDisplay
+                username={username}
+                onEdit={() => setIsEditing(true)}
+              />
+              <div className="flex items-center justify-end space-x-2">
+                <Switch
+                  checked={responseEnabled}
+                  onCheckedChange={() => setResponseEnabled((prev) => !prev)}
+                  id="responseEnabled"
+                />
+                <Label htmlFor="responseEnabled">AI Response</Label>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>Error: {error}</AlertDescription>
+            </Alert>
+          )}
+
+          <ul className="mt-4 space-y-4">
+            {data.length > 0 ? (
+              data.map((item) => (
+                <MonitorCard
+                  key={item.id}
+                  data={item.data}
+                  timestamp={item.timestamp}
+                  responseEnabled={responseEnabled}
+                />
+              ))
+            ) : (
+              <p className="text-gray-400">No data available.</p>
+            )}
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }
