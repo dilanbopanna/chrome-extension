@@ -23,7 +23,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       // Check if username exists on the server
-      fetch(`http://localhost:9001/api/check-username?username=${username}`)
+      fetch(
+        `https://chrome-extension-jnx7.onrender.com/api/check-username?username=${username}`
+      )
         .then((response) => response.json())
         .then((data) => {
           if (data.exists) {

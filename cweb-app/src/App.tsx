@@ -26,7 +26,9 @@ function App() {
   const fetchData = useCallback(() => {
     if (!username) return;
 
-    fetch(`http://localhost:9001/api/all-copies?username=${username}`)
+    fetch(
+      `https://chrome-extension-jnx7.onrender.com/api/all-copies?username=${username}`
+    )
       .then((response) =>
         response.ok ? response.json() : Promise.reject('Network error')
       )

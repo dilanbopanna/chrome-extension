@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       // Now, make the API call with the username and copied content
-      fetch('http://localhost:9001/api/save-copy', {
+      fetch('https://chrome-extension-jnx7.onrender.com/api/save-copy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
